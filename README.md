@@ -1,44 +1,37 @@
-# cs2-trails
-**a plugin that allows players to use custom trails**
+# SharpTimer-Trails
+**A plugin that allows the top players to have a custom trail.**
 
 <br>
 
 <details>
-	<summary>showcase</summary>
-	<img src="https://github.com/user-attachments/assets/6d31beec-b2ca-47bc-8f55-fd1eda29faa2" width="125"> <br>
-	<img src="https://github.com/user-attachments/assets/3bd99e1b-ffb7-4254-9e7c-9470703e6891" width="175"> <br>
+	<summary>Showcase</summary>
 	<img src="https://github.com/user-attachments/assets/1135a673-e19f-4a00-9edc-f4bfc760c45f" width="250"> <br>
 	<img src="https://github.com/user-attachments/assets/af7406b0-3911-489c-91e1-3dde79002790" width="300"> <br>
 	<img src="https://github.com/user-attachments/assets/7dddc6cc-a0aa-4946-9c49-c5bf6b48ceb1" width="200"> <br>
-	the beams in cs2 are unfortunately not as good as they were in csgo :(
 </details>
 
 <br>
 
-## information:
+## Information:
 
-### requirements
-- [MetaMod](https://cs2.poggu.me/metamod/installation)
+### Requirements
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 - [Cruze03/Clientprefs](https://github.com/Cruze03/Clientprefs)
 
 <br>
 
-> [!NOTE]
-> inspired by [Nickelony/Trails-Chroma](https://github.com/Nickelony/Trails-Chroma)
-
-<img src="https://github.com/user-attachments/assets/53e486cc-8da4-45ab-bc6e-eb38145aba36" height="200px"> <br>
-
-<br>
-
-## example config
+## Example Config
 ```json
 {
-  "Prefix": "{red}[{orange}T{yellow}r{green}a{lightblue}i{darkblue}l{purple}s{red}]",
-  "Permission": "@css/reservation",
-  "MenuCommands": "trails,trail",
-  "MenuType": "html",
-  "ChatMessages": true,
+  "Host": "localhost",
+  "Database": "cs2_db",
+  "Username": "admin",
+  "Password": "pw",
+  "Port": 3306,
+  "Sslmode": "none",
+  "Table-Prefix": "",
+  "TopCount": 5,
+  "Permission": "@css/root",
   "TicksForUpdate": 1,
   "Trails": {
     "1": {
@@ -66,5 +59,3 @@
   "ConfigVersion": 1
 }
 ```
-
-<br> <a href='https://ko-fi.com/exkludera' target='blank'><img src='https://cdn.ko-fi.com/cdn/kofi5.png' height='48px' alt='Buy Me a Coffee at ko-fi.com'></a>
