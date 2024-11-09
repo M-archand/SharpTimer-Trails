@@ -2,14 +2,18 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
+using Microsoft.Extensions.Logging;
 
-namespace Trails;
+namespace SharpTimerTrails;
 
-public partial class Plugin : BasePlugin, IPluginConfig<Config>
+public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 {
-    public int Tick { get; set; } = 0;
+    public int Tick { get; set; } = 1;
     static readonly Vector[] TrailLastOrigin = new Vector[64];
     static readonly Vector[] TrailEndOrigin = new Vector[64];
+    private List<string> cachedTopPlayers = [];
+    private DateTime lastFetchTime = DateTime.MinValue;
+    private TimeSpan DatabaseRefreshInterval => TimeSpan.FromSeconds(Config.DatabaseRefreshInterval);
 
     public void OnTick()
     {
@@ -20,37 +24,100 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
 
         Tick = 0;
 
-        foreach (CCSPlayerController player in Utilities.GetPlayers().Where(p => !p.IsBot))
+        if ((DateTime.UtcNow - lastFetchTime) >= DatabaseRefreshInterval)
         {
-            if (!player.PawnIsAlive || !playerCookies.ContainsKey(player) || !HasPermission(player))
-                continue;
-
-            var absOrgin = player.PlayerPawn.Value!.AbsOrigin!;
-
-            if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrgin) <= 5.0f)
-                continue;
-
-            VecCopy(absOrgin, TrailLastOrigin[player.Slot]);
-
-            CreateTrail(player, absOrgin);
+            lastFetchTime = DateTime.UtcNow;
+            _ = Task.Run(async () => cachedTopPlayers = await GetTopPlayersAsync());
         }
-    }
-
-    public void CreateTrail(CCSPlayerController player, Vector absOrigin)
-    {
-        if (player != null && playerCookies.TryGetValue(player, out var cookieValue))
+        
+        try
         {
-            if (string.IsNullOrEmpty(cookieValue) || cookieValue == "none")
-                return;
+            var allPlayers = Utilities.GetPlayers().Where(p => !p.IsBot).ToList();
 
-            if (Config.Trails.TryGetValue(cookieValue, out var trailData))
+            for (int i = 0; i < cachedTopPlayers.Count && i < Config.Trails.Count; i++)
             {
-                if (trailData.File.EndsWith(".vpcf"))
-                    CreateParticle(player, absOrigin, trailData);
+                var player = allPlayers.FirstOrDefault(p => p.SteamID.ToString() == cachedTopPlayers[i]);
 
-                else CreateBeam(player, absOrigin, trailData);
+                if (player != null && player.PawnIsAlive)
+                {
+                    var absOrigin = player.PlayerPawn.Value!.AbsOrigin!;
+
+                    if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
+                    {
+                        VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
+                        CreateTrail(player, absOrigin, i + 1);
+                    }
+                }
+            }
+
+            foreach (var player in allPlayers.Where(p => !cachedTopPlayers.Contains(p.SteamID.ToString())))
+            {
+                if (!player.PawnIsAlive || !HasPermission(player))
+                    continue;
+
+                var absOrigin = player.PlayerPawn.Value!.AbsOrigin!;
+
+                if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
+                {
+                    VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
+                    CreateTrail(player, absOrigin, 0);
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error occurred during OnTick execution.");
+        }
+        
+        /*try
+        {
+            var allPlayers = Utilities.GetPlayers().Where(p => !p.IsBot).ToList();
+
+            const float maxNormalMovementDistance = 20.0f;
+
+            foreach (var player in allPlayers)
+            {
+                if (player == null || !player.PawnIsAlive) continue;
+
+                var absOrigin = player.PlayerPawn.Value!.AbsOrigin!;
+                var lastOrigin = TrailLastOrigin[player.Slot];
+
+                float distanceMoved = VecCalculateDistance(lastOrigin, absOrigin);
+
+                if (distanceMoved > maxNormalMovementDistance)
+                {
+                    VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
+                    continue;
+                }
+
+                if (distanceMoved > 5.0f)
+                {
+                    VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
+                    int rank = cachedTopPlayers.IndexOf(player.SteamID.ToString()) + 1;
+                    CreateTrail(player, absOrigin, rank);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error occurred during OnTick execution.");
+        }*/
+    }
+
+    public void CreateTrail(CCSPlayerController player, Vector absOrigin, int rank)
+    {
+        if (rank > Config.Trails.Count)
+            return;
+
+        string trailKey = rank > 0 ? rank.ToString() : "0";
+
+        if (player == null || !Config.Trails.TryGetValue(trailKey, out var trailData))
+            return;
+
+        if (trailData.File.EndsWith(".vpcf"))
+            CreateParticle(player, absOrigin, trailData);
+        else
+            CreateBeam(player, absOrigin, trailData);
     }
 
     public void CreateParticle(CCSPlayerController player, Vector absOrigin, Trail trailData)

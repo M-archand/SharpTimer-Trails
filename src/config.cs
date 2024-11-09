@@ -1,27 +1,43 @@
 ﻿using CounterStrikeSharp.API.Core;
 
-public class Trail
+namespace SharpTimerTrails
 {
-    public string Name { get; set; } = "Trail";
-    public string File { get; set; } = "";
-    public string Color { get; set; } = "rainbow";
-    public float Width { get; set; } = 1.0f;
-    public float Lifetime { get; set; } = 1.0f;
-}
-
-public class Config : BasePluginConfig
-{
-    public string Prefix { get; set; } = "{red}[{orange}T{yellow}r{green}a{lightblue}i{darkblue}l{purple}s{red}]";
-    public string Permission { get; set; } = "@css/reservation";
-    public string MenuCommands { get; set; } = "trails,trail";
-    public string MenuType { get; set; } = "html";
-    public bool ChatMessages { get; set; } = true;
-    public int TicksForUpdate { get; set; } = 1;
-    public Dictionary<string, Trail> Trails { get; set; } = new()
+    public class Trail
     {
-        { "1", new Trail { Name = "Rainbow Trail", Color = "rainbow" } },
-        { "2", new Trail { Name = "Particle Trail", File = "particles/ambient_fx/ambient_sparks_glow.vpcf" } },
-        { "3", new Trail { Name = "Red Trail", Color = "255 0 0", Width = 3.0f, Lifetime = 2.0f } },
-        { "4", new Trail { Name = "Example Settings", Color = "255 255 255", Width = 1.0f, Lifetime = 1.0f, File = "materials/sprites/laserbeam.vtex" } }
-    };
+        public string Name { get; set; } = "Trail";
+        public string File { get; set; } = "";
+        public string Color { get; set; } = "rainbow";
+        public float Width { get; set; } = 1.0f;
+        public float Lifetime { get; set; } = 1.0f;
+    }
+
+    public sealed class DatabaseSettings
+    {
+        public string Host { get; set; } = "localhost";
+        public string Database { get; set; } = "database";
+        public string Username { get; set; } = "user";
+        public string Password { get; set; } = "password";
+        public int Port { get; set; } = 3306;
+        public string Sslmode { get; set; } = "none";
+        public string TablePrefix { get; set; } = "";
+    }
+
+    public class PluginConfig : BasePluginConfig
+    {
+        public int TopCount { get; set; } = 3;
+        public string Permission { get; set; } = "@css/root";
+        public int TicksForUpdate { get; set; } = 1;
+        public int DatabaseRefreshInterval { get; set; } = 30;
+        public int DatabaseType { get; set; } = 1; // 1 = MySQL, 2 = SQLite, 3 = PostgreSQL
+        public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
+        public Dictionary<string, Trail> Trails { get; set; } = new()
+        {
+            { "0", new Trail { Name = "Rainbow Trail", Color = "rainbow" } },
+            { "1", new Trail { Name = "Rainbow Trail", Color = "rainbow" } },
+            { "2", new Trail { Name = "Particle Trail", File = "particles/ambient_fx/ambient_sparks_glow.vpcf" } },
+            { "3", new Trail { Name = "Red Trail", Color = "255 0 0", Width = 3.0f, Lifetime = 2.0f } },
+            { "4", new Trail { Name = "Example Settings", Color = "255 255 255", Width = 1.0f, Lifetime = 1.0f, File = "materials/sprites/laserbeam.vtex" } }
+        };
+        public override int Version { get; set; } = 1;
+    }
 }
