@@ -25,7 +25,6 @@ namespace SharpTimerTrails
             float dz = vector2.Z - vector1.Z;
 
             return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
-            
         }
 
         public static void VecCopy(Vector vector1, Vector vector2)
@@ -40,6 +39,7 @@ namespace SharpTimerTrails
         }
 
         private int colorIndex = 0;
+        
         Color[] rainbowColors = {
             Color.FromArgb(255, 255, 0, 0),
             Color.FromArgb(255, 255, 25, 0),
