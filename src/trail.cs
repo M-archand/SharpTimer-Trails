@@ -11,7 +11,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     public int Tick { get; set; } = 1;
     static readonly Vector[] TrailLastOrigin = new Vector[64];
     static readonly Vector[] TrailEndOrigin = new Vector[64];
-    private List<string> cachedTopPlayers = [];
+    private List<string> cachedTopPlayers = new List<string>();
     private DateTime lastFetchTime = DateTime.MinValue;
     private TimeSpan DatabaseRefreshInterval => TimeSpan.FromSeconds(Config.DatabaseRefreshInterval);
 
@@ -40,7 +40,8 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
                 if (player != null && player.PawnIsAlive)
                 {
-                    var absOrigin = player.PlayerPawn.Value!.AbsOrigin!;
+                    var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
+                    if (absOrigin == null) return;
 
                     if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
                     {
@@ -55,7 +56,8 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                 if (!player.PawnIsAlive || !HasPermission(player))
                     continue;
 
-                var absOrigin = player.PlayerPawn.Value!.AbsOrigin!;
+                    var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
+                    if (absOrigin == null) return;
 
                 if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
                 {
@@ -68,40 +70,6 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
         {
             Logger.LogError(ex, "Error occurred during OnTick execution.");
         }
-        
-        /*try
-        {
-            var allPlayers = Utilities.GetPlayers().Where(p => !p.IsBot).ToList();
-
-            const float maxNormalMovementDistance = 20.0f;
-
-            foreach (var player in allPlayers)
-            {
-                if (player == null || !player.PawnIsAlive) continue;
-
-                var absOrigin = player.PlayerPawn.Value!.AbsOrigin!;
-                var lastOrigin = TrailLastOrigin[player.Slot];
-
-                float distanceMoved = VecCalculateDistance(lastOrigin, absOrigin);
-
-                if (distanceMoved > maxNormalMovementDistance)
-                {
-                    VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
-                    continue;
-                }
-
-                if (distanceMoved > 5.0f)
-                {
-                    VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
-                    int rank = cachedTopPlayers.IndexOf(player.SteamID.ToString()) + 1;
-                    CreateTrail(player, absOrigin, rank);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error occurred during OnTick execution.");
-        }*/
     }
 
     public void CreateTrail(CCSPlayerController player, Vector absOrigin, int rank)
@@ -111,7 +79,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
         string trailKey = rank > 0 ? rank.ToString() : "0";
 
-        if (player == null || !Config.Trails.TryGetValue(trailKey, out var trailData))
+        if (!Config.Trails.TryGetValue(trailKey, out var trailData))
             return;
 
         if (trailData.File.EndsWith(".vpcf"))
@@ -142,6 +110,8 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
     public void CreateBeam(CCSPlayerController player, Vector absOrigin, Trail trailData)
     {
+        const float teleportThreshold = 100.0f;
+
         string colorValue = !string.IsNullOrEmpty(trailData.Color) ? trailData.Color : "255 255 255";
         float widthValue = trailData.Width > 0 ? trailData.Width : 1.0f;
         float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
@@ -159,9 +129,10 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             if (colorParts.Length == 3 &&
                 int.TryParse(colorParts[0], out var r) &&
                 int.TryParse(colorParts[1], out var g) &&
-                int.TryParse(colorParts[2], out var b)
-            )
-            color = Color.FromArgb(255, r, g, b);
+                int.TryParse(colorParts[2], out var b))
+            {
+                color = Color.FromArgb(255, r, g, b);
+            }
         }
 
         if (VecIsZero(TrailEndOrigin[player.Slot]))
@@ -170,12 +141,21 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             return;
         }
 
+        float distance = VecCalculateDistance(TrailEndOrigin[player.Slot], absOrigin);
+
+        if (distance > teleportThreshold)
+        {
+            Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}");
+            VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
+            return;
+        }
+
         var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam")!;
 
         beam.Width = widthValue;
         beam.Render = color;
-        beam.SpriteName = trailData.File; // doesnt work :(
-        beam.SetModel(trailData.File); // how to fix? :(
+        beam.SpriteName = trailData.File; // does not work
+        beam.SetModel(trailData.File);    // how to fix?
 
         beam.Teleport(absOrigin, new QAngle(), new Vector());
 
