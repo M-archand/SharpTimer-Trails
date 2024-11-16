@@ -27,6 +27,7 @@ namespace SharpTimerTrails
         public int TopCount { get; set; } = 3;
         public string Permission { get; set; } = "@css/root";
         public int TicksForUpdate { get; set; } = 1;
+        public float TeleportThreshold { get; set; } = 100.0f;
         public int DatabaseRefreshInterval { get; set; } = 30;
         public int DatabaseType { get; set; } = 1; // 1 = MySQL, 2 = SQLite, 3 = PostgreSQL
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
