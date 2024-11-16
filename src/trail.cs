@@ -14,6 +14,9 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     private List<string> cachedTopPlayers = new List<string>();
     private DateTime lastFetchTime = DateTime.MinValue;
     private TimeSpan DatabaseRefreshInterval => TimeSpan.FromSeconds(Config.DatabaseRefreshInterval);
+    private int colorIndex = 0;
+    private readonly object cachedPlayersLock = new object();
+    private bool isFetchingPlayers = false;
 
     public void OnTick()
     {
@@ -24,40 +27,61 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
         Tick = 0;
 
-        if ((DateTime.UtcNow - lastFetchTime) >= DatabaseRefreshInterval)
+        if (!isFetchingPlayers && (DateTime.UtcNow - lastFetchTime) >= DatabaseRefreshInterval)
         {
             lastFetchTime = DateTime.UtcNow;
-            _ = Task.Run(async () => cachedTopPlayers = await GetTopPlayersAsync());
+            isFetchingPlayers = true;
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var topPlayers = await GetTopPlayersAsync();
+                    lock (cachedPlayersLock)
+                    {
+                        cachedTopPlayers = topPlayers;
+                    }
+                }
+                finally
+                {
+                    isFetchingPlayers = false;
+                }
+            });
         }
         
         try
         {
             var allPlayers = Utilities.GetPlayers().Where(p => !p.IsBot).ToList();
 
-            for (int i = 0; i < cachedTopPlayers.Count && i < Config.Trails.Count; i++)
+            List<string> localCachedPlayers;
+            lock (cachedPlayersLock)
             {
-                var player = allPlayers.FirstOrDefault(p => p.SteamID.ToString() == cachedTopPlayers[i]);
-
-                if (player != null && player.PawnIsAlive)
-                {
-                    var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
-                    if (absOrigin == null) return;
-
-                    if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
-                    {
-                        VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
-                        CreateTrail(player, absOrigin, i + 1);
-                    }
-                }
+                localCachedPlayers = cachedTopPlayers.ToList();
             }
 
-            foreach (var player in allPlayers.Where(p => !cachedTopPlayers.Contains(p.SteamID.ToString())))
+            for (int i = 0; i < localCachedPlayers.Count && i < Config.Trails.Count; i++)
+            {
+                var player = allPlayers.FirstOrDefault(p => p.SteamID.ToString() == localCachedPlayers[i]);
+
+                if (player == null || !player.PawnIsAlive) continue;
+
+                var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
+                if (absOrigin == null) continue;
+
+                if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
+                {
+                    VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
+                    CreateTrail(player, absOrigin, i + 1);
+                }
+                
+            }
+
+            foreach (var player in allPlayers.Where(p => !localCachedPlayers.Contains(p.SteamID.ToString())))
             {
                 if (!player.PawnIsAlive || !HasPermission(player))
                     continue;
 
                     var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
-                    if (absOrigin == null) return;
+                    if (absOrigin == null) continue;
 
                 if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
                 {
@@ -68,7 +92,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error occurred during OnTick execution.");
+            Logger.LogError(ex, $"Error during OnTick. Current Tick: {Tick}, Cached Players Count: {cachedTopPlayers.Count}");
         }
     }
 
@@ -80,7 +104,10 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
         string trailKey = rank > 0 ? rank.ToString() : "0";
 
         if (!Config.Trails.TryGetValue(trailKey, out var trailData))
+        {
+            Logger.LogWarning($"The trail key {trailKey} was not found in the cfg. Skipping trail creation for rank {rank}.");
             return;
+        }
 
         if (trailData.File.EndsWith(".vpcf"))
             CreateParticle(player, absOrigin, trailData);
@@ -110,64 +137,73 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
     public void CreateBeam(CCSPlayerController player, Vector absOrigin, Trail trailData)
     {
-        const float teleportThreshold = 100.0f;
-
-        string colorValue = !string.IsNullOrEmpty(trailData.Color) ? trailData.Color : "255 255 255";
-        float widthValue = trailData.Width > 0 ? trailData.Width : 1.0f;
-        float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
-        string fileValue = !string.IsNullOrEmpty(trailData.File) ? trailData.File : "materials/sprites/laserbeam.vtex";
-
-        Color color = Color.FromArgb(255, 255, 255, 255);
-        if (string.IsNullOrEmpty(colorValue) || colorValue == "rainbow")
+        try
         {
-            color = rainbowColors[colorIndex];
-            colorIndex = (colorIndex + 1) % rainbowColors.Length;
-        }
-        else
-        {
-            var colorParts = colorValue.Split(' ');
-            if (colorParts.Length == 3 &&
-                int.TryParse(colorParts[0], out var r) &&
-                int.TryParse(colorParts[1], out var g) &&
-                int.TryParse(colorParts[2], out var b))
+            float teleportThreshold = Config.TeleportThreshold;
+            string colorValue = !string.IsNullOrEmpty(trailData.Color) ? trailData.Color : "255 255 255";
+            float widthValue = trailData.Width > 0 ? trailData.Width : 1.0f;
+            float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
+
+            Color color;
+            if (string.IsNullOrEmpty(colorValue) || colorValue == "rainbow")
             {
-                color = Color.FromArgb(255, r, g, b);
+                color = rainbowColors[colorIndex];
+                colorIndex = (colorIndex + 1) % rainbowColors.Length;
             }
-        }
+            else
+            {
+                var colorParts = colorValue.Split(' ');
+                if (colorParts.Length == 3 &&
+                    int.TryParse(colorParts[0], out var r) &&
+                    int.TryParse(colorParts[1], out var g) &&
+                    int.TryParse(colorParts[2], out var b))
+                {
+                    color = Color.FromArgb(255, r, g, b);
+                }
+                else
+                {
+                    Logger.LogWarning($"Invalid color format: {colorValue}, defaulting to white.");
+                    color = Color.White;
+                }
+            }
 
-        if (VecIsZero(TrailEndOrigin[player.Slot]))
-        {
+            if (VecIsZero(TrailEndOrigin[player.Slot]))
+            {
+                VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
+                return;
+            }
+
+            float distance = VecCalculateDistance(TrailEndOrigin[player.Slot], absOrigin);
+
+            if (distance > teleportThreshold)
+            {
+                VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
+                return;
+            }
+
+            var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam")!;
+
+            beam.Width = widthValue;
+            beam.Render = color;
+            beam.SpriteName = trailData.File; // WIP
+            beam.SetModel(trailData.File);    // WIP
+
+            beam.Teleport(absOrigin, new QAngle(), new Vector());
+
+            VecCopy(TrailEndOrigin[player.Slot], beam.EndPos);
             VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
-            return;
+
+            Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
+
+            AddTimer(lifetimeValue, () =>
+            {
+                if (beam != null && beam.DesignerName == "env_beam")
+                    beam.Remove();
+            });
         }
-
-        float distance = VecCalculateDistance(TrailEndOrigin[player.Slot], absOrigin);
-
-        if (distance > teleportThreshold)
+        catch (Exception ex)
         {
-            Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}");
-            VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
-            return;
+            Logger.LogError(ex, $"Error occurred while creating a beam for SteamID: {player.SteamID}, trail data: {trailData.Name}");
         }
-
-        var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam")!;
-
-        beam.Width = widthValue;
-        beam.Render = color;
-        beam.SpriteName = trailData.File; // does not work
-        beam.SetModel(trailData.File);    // how to fix?
-
-        beam.Teleport(absOrigin, new QAngle(), new Vector());
-
-        VecCopy(TrailEndOrigin[player.Slot], beam.EndPos);
-        VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
-
-        Utilities.SetStateChanged(beam, "CBeam", "m_vecEndPos");
-
-        AddTimer(lifetimeValue, () =>
-        {
-            if (beam != null && beam.DesignerName == "env_beam")
-                beam.Remove();
-        });
     }
 }
