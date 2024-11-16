@@ -179,7 +179,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             {
                 if (Config.EnableDebug)
                 {
-                    Logger.LogDebug($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}");
+                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}");
                 }
                 VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
                 return;
