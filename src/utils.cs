@@ -33,12 +33,11 @@ namespace SharpTimerTrails
             vector2.Y = vector1.Y;
             vector2.Z = vector1.Z;
         }
+
         public static bool VecIsZero(Vector vector)
         {
             return vector.LengthSqr() == 0;
         }
-
-        private int colorIndex = 0;
         
         Color[] rainbowColors = {
             Color.FromArgb(255, 255, 0, 0),
