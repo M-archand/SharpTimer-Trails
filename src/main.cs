@@ -13,8 +13,6 @@ namespace SharpTimerTrails
 
         public required PluginConfig Config { get; set; } = new PluginConfig();
 
-        public Dictionary<CCSPlayerController, string> playerCookies = new();
-
         public void OnConfigParsed(PluginConfig config)
         {
             if (config.Version < Config.Version)
