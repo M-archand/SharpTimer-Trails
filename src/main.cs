@@ -12,7 +12,7 @@ namespace SharpTimerTrails
         public override string ModuleAuthor => "exkludera + Marchand";
 
         public required PluginConfig Config { get; set; } = new PluginConfig();
-        public int TrailCookie = 0;
+
         public Dictionary<CCSPlayerController, string> playerCookies = new();
 
         public void OnConfigParsed(PluginConfig config)
@@ -26,6 +26,7 @@ namespace SharpTimerTrails
         public override void Load(bool hotReload)
         {
             InitializeDatabasePathAndConnectionString();
+            colorIndex = 0;
 
             RegisterListener<OnTick>(OnTick);
             RegisterListener<OnServerPrecacheResources>(OnServerPrecacheResources);
