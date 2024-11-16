@@ -177,6 +177,10 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
             if (distance > teleportThreshold)
             {
+                if (Config.EnableDebug)
+                {
+                    Logger.LogDebug($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}");
+                }
                 VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
                 return;
             }

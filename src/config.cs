@@ -39,6 +39,7 @@ namespace SharpTimerTrails
             { "3", new Trail { Name = "Red Trail", Color = "255 0 0", Width = 3.0f, Lifetime = 2.0f } },
             { "4", new Trail { Name = "Example Settings", Color = "255 255 255", Width = 1.0f, Lifetime = 1.0f, File = "materials/sprites/laserbeam.vtex" } }
         };
+        public bool EnableDebug { get; set; } = false;
         public override int Version { get; set; } = 1;
     }
 }
