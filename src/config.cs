@@ -34,11 +34,12 @@ namespace SharpTimerTrails
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public Dictionary<string, Trail> Trails { get; set; } = new()
         {
-            { "0", new Trail { Name = "Rainbow Trail", Color = "rainbow" } },
-            { "1", new Trail { Name = "Rainbow Trail", Color = "rainbow" } },
-            { "2", new Trail { Name = "Particle Trail", File = "particles/ambient_fx/ambient_sparks_glow.vpcf" } },
-            { "3", new Trail { Name = "Red Trail", Color = "255 0 0", Width = 3.0f, Lifetime = 2.0f } },
-            { "4", new Trail { Name = "Example Settings", Color = "255 255 255", Width = 1.0f, Lifetime = 1.0f, File = "materials/sprites/laserbeam.vtex" } }
+            { "0", new Trail { Name = "Fire Trail", File = "particles/explosions_fx/molotov_child_flame02a.vpcf", Lifetime = 5.0f } },
+            { "1", new Trail { Name = "Glowing Sparks Trail", File = "particles/ambient_fx/ambient_sparks_glow.vpcf", Lifetime = 5.0f } },
+            { "2", new Trail { Name = "Rainbow Trail", Color = "rainbow", Width = 1.0f, Lifetime = 3.0f } },
+            { "3", new Trail { Name = "Red Trail", Color = "255 0 0", Width = 1.0f, Lifetime = 3.0f } },
+            { "4", new Trail { Name = "Green Trail", Color = "0 255 0", Width = 1.0f, Lifetime = 3.0f } },
+            { "5", new Trail { Name = "Blue Trail", Color = "0 0 255", Width = 1.0f, Lifetime = 3.0f } }
         };
         public bool EnableDebug { get; set; } = false;
 
