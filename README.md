@@ -39,6 +39,9 @@ This will allow you view the contents of `pak01_dir.vpk` which has all of the pa
 <br>
 
 ## Example Config
+- Trail 0 is the trail assigned to anyone who has the permission (e.g. @ccs/root). Trail 1 is assigned to the top player on the server (points), Trail 2 is for the second player on the server, etc.
+- You must have a trail configured for each number you have set in your TopCount. So if you have `TopCount: 10`, you should have trails created ranging from 0-10.
+- The player rank trail takes presedence over the permission based trail (Trail 0) if a player is both in the top players and has the permission flag. I may change this in the future depending on feedback.
 ```json
 {
   "TopCount": 5,  // The top 5 players with the most points will get a trail.
