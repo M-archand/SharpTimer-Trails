@@ -25,10 +25,28 @@ namespace SharpTimerTrails
 
     public class PluginConfig : BasePluginConfig
     {
+        [JsonPropertyName("TopCount")]
         public int TopCount { get; set; } = 5;
+
+        [JsonPropertyName("Permission")]
         public string Permission { get; set; } = "@css/root";
-        public int TicksForUpdate { get; set; } = 1;
+
+        [JsonPropertyName("BeamTicksForUpdate")]
+        public int BeamTicksForUpdate { get; set; } = 1;
+
+        [JsonPropertyName("ParticleTicksForUpdate")]
+        public int ParticleTicksForUpdate { get; set; } = 1;
+
+        [JsonPropertyName("ReloadConfigCommand")]
+        public string ReloadConfigCommand { get; set; } = "reloadtrailscfg";
+
+        [JsonPropertyName("UpdateConfigCommand")]
+        public string UpdateConfigCommand { get; set; } = "updatetrailscfg";
+
+        [JsonPropertyName("TeleportThreshold")]
         public float TeleportThreshold { get; set; } = 100.0f;
+
+        [JsonPropertyName("DatabaseRefreshInterval")]
         public int DatabaseRefreshInterval { get; set; } = 120;
         public int DatabaseType { get; set; } = 1; // 1 = MySQL, 2 = SQLite, 3 = PostgreSQL
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
@@ -41,9 +59,13 @@ namespace SharpTimerTrails
             { "4", new Trail { Name = "Green Trail", Color = "0 255 0", Width = 1.0f, Lifetime = 3.0f } },
             { "5", new Trail { Name = "Blue Trail", Color = "0 0 255", Width = 1.0f, Lifetime = 3.0f } }
         };
+        [JsonPropertyName("EnableDebug")]
         public bool EnableDebug { get; set; } = false;
 
+        [JsonPropertyName("AutoUpdateConfig")]
+        public bool AutoUpdateConfig { get; set; } = false;
+
         [JsonPropertyName("ConfigVersion")] 
-        public override int Version { get; set; } = 1;
+        public override int Version { get; set; } = 2;
     }
 }
