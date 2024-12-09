@@ -22,7 +22,9 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         Tick++;
 
-        if (Tick < Config.TicksForUpdate)
+        if (Tick < Config.BeamTicksForUpdate)
+            return;
+        if (Tick < Config.ParticleTicksForUpdate)
             return;
 
         Tick = 0;
@@ -139,7 +141,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         try
         {
-            float teleportThreshold = Config.TeleportThreshold;
+            float teleportThreshold = Config.TeleportThreshold * Config.BeamTicksForUpdate;
             string colorValue = !string.IsNullOrEmpty(trailData.Color) ? trailData.Color : "255 255 255";
             float widthValue = trailData.Width > 0 ? trailData.Width : 1.0f;
             float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
@@ -179,7 +181,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             {
                 if (Config.EnableDebug)
                 {
-                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}");
+                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}, Threshold: {teleportThreshold} (BeamTicksForUpdate * TeleportThreshold)");
                 }
                 VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
                 return;
