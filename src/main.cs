@@ -12,7 +12,7 @@ namespace SharpTimerTrails
     public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         public override string ModuleName => "SharpTimer Trails";
-        public override string ModuleVersion => "1.0.0";
+        public override string ModuleVersion => "1.0.1";
         public override string ModuleAuthor => "exkludera,  Marchand";
 
         public required PluginConfig Config { get; set; } = new PluginConfig();
