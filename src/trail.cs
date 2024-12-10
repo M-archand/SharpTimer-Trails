@@ -22,9 +22,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         Tick++;
 
-        if (Tick < Config.BeamTicksForUpdate)
-            return;
-        if (Tick < Config.ParticleTicksForUpdate)
+        if (Tick < Config.BeamTicksForUpdate && Tick < Config.ParticleTicksForUpdate)
             return;
 
         Tick = 0;
@@ -49,7 +47,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                 }
             });
         }
-        
+
         try
         {
             var allPlayers = Utilities.GetPlayers().Where(p => !p.IsBot).ToList();
@@ -74,7 +72,6 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                     VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
                     CreateTrail(player, absOrigin, i + 1);
                 }
-                
             }
 
             foreach (var player in allPlayers.Where(p => !localCachedPlayers.Contains(p.SteamID.ToString())))
@@ -82,8 +79,8 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                 if (!player.PawnIsAlive || !HasPermission(player))
                     continue;
 
-                    var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
-                    if (absOrigin == null) continue;
+                var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
+                if (absOrigin == null) continue;
 
                 if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
                 {
@@ -119,22 +116,50 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
     public void CreateParticle(CCSPlayerController player, Vector absOrigin, Trail trailData)
     {
-        float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
-     
-        var particle = Utilities.CreateEntityByName<CParticleSystem>("info_particle_system")!;
-
-        particle.EffectName = trailData.File;
-        particle.DispatchSpawn();
-        particle.AcceptInput("Start");
-        particle.AcceptInput("FollowEntity", player.PlayerPawn?.Value!, player.PlayerPawn?.Value!, "!activator");
-
-        particle.Teleport(absOrigin, new QAngle(), new Vector());
-
-        AddTimer(lifetimeValue, () =>
+        try
         {
-            if (particle != null && particle.IsValid)
-                particle.Remove();
-        });
+            float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
+            float scaledTeleportThreshold = Config.TeleportThreshold * Config.ParticleTicksForUpdate;
+            float distance = VecCalculateDistance(TrailEndOrigin[player.Slot], absOrigin);
+
+            if (VecCalculateDistance(TrailEndOrigin[player.Slot], absOrigin) > scaledTeleportThreshold)
+            {
+                if (Config.EnableDebug)
+                {
+                    Logger.LogInformation($"Skipping particle creation for player {player.SteamID} due to teleport detected. Distance: {distance}, Threshold: {scaledTeleportThreshold} (TeleportThreshold * ParticleTicksForUpdate)");
+                }
+                VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
+                return;
+            }
+
+            var particle = Utilities.CreateEntityByName<CParticleSystem>("info_particle_system")!;
+
+            if (particle == null)
+            {
+                if (Config.EnableDebug)
+                    Logger.LogWarning($"Failed to create particle system for player {player.SteamID}. Trail data: {trailData.Name}");
+                return;
+            }
+
+            particle.EffectName = trailData.File;
+            particle.DispatchSpawn();
+            particle.AcceptInput("Start");
+            particle.AcceptInput("FollowEntity", player.PlayerPawn?.Value!, player.PlayerPawn?.Value!, "!activator");
+
+            particle.Teleport(absOrigin, new QAngle(), new Vector());
+
+            VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
+
+            AddTimer(lifetimeValue, () =>
+            {
+                if (particle != null && particle.IsValid)
+                    particle.Remove();
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Error occurred while creating a particle for player {player.SteamID}, trail data: {trailData.Name}");
+        }
     }
 
     public void CreateBeam(CCSPlayerController player, Vector absOrigin, Trail trailData)
@@ -181,7 +206,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             {
                 if (Config.EnableDebug)
                 {
-                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}, Threshold: {teleportThreshold} (BeamTicksForUpdate * TeleportThreshold)");
+                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}, Threshold: {teleportThreshold} (TeleportThreshold * BeamTicksForUpdate)");
                 }
                 VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
                 return;
@@ -189,10 +214,17 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
             var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam")!;
 
+            if (beam == null)
+            {
+                if (Config.EnableDebug)
+                    Logger.LogWarning($"Failed to create beam entity for player {player.SteamID}. Trail data: {trailData.Name}");
+                return;
+            }
+
             beam.Width = widthValue;
             beam.Render = color;
-            beam.SpriteName = trailData.File; // WIP
-            beam.SetModel(trailData.File);    // WIP
+            beam.SpriteName = trailData.File;
+            beam.SetModel(trailData.File);
 
             beam.Teleport(absOrigin, new QAngle(), new Vector());
 
@@ -209,7 +241,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Error occurred while creating a beam for SteamID: {player.SteamID}, trail data: {trailData.Name}");
+            Logger.LogError(ex, $"Error occurred while creating a beam for player {player.SteamID}, trail data: {trailData.Name}");
         }
     }
 }
