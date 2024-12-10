@@ -81,11 +81,11 @@ namespace SharpTimerTrails
             try
             {
                 Config.Reload();
-                command?.ReplyToCommand($" {ChatColors.Lime}Configuration reloaded successfully!");
+                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Lime}Configuration reloaded successfully!");
             }
             catch (Exception)
             {
-                command?.ReplyToCommand($"  {ChatColors.Red}Failed to reload configuration.");
+                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Red}Failed to reload configuration.");
             }
         }
 
@@ -93,18 +93,18 @@ namespace SharpTimerTrails
         {
             if (player != null && !AdminManager.PlayerHasPermissions(player, Config.Permission))
             {
-                command?.ReplyToCommand($" {ChatColors.Red}You do not have the correct permission to execute this command.");
+                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Red}You do not have the correct permission to execute this command.");
                 return;
             }
 
             try
             {
                 Config.Update();
-                command?.ReplyToCommand($" {ChatColors.Lime}Configuration updated successfully!");
+                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Lime}Configuration updated successfully!");
             }
             catch (Exception)
             {
-                command?.ReplyToCommand($" {ChatColors.Red}Failed to update configuration.");
+                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Red}Failed to update configuration.");
             }
         }
     }
