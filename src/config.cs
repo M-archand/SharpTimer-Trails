@@ -28,14 +28,14 @@ namespace SharpTimerTrails
         [JsonPropertyName("TopCount")]
         public int TopCount { get; set; } = 5;
 
-        [JsonPropertyName("Permission")]
-        public string Permission { get; set; } = "@css/root";
+        [JsonPropertyName("TicksForUpdate")]
+        public int TicksForUpdate { get; set; } = 1;
 
-        [JsonPropertyName("BeamTicksForUpdate")]
-        public int BeamTicksForUpdate { get; set; } = 1;
+        [JsonPropertyName("TrailPermission")]
+        public string TrailPermission { get; set; } = "@css/vip";
 
-        [JsonPropertyName("ParticleTicksForUpdate")]
-        public int ParticleTicksForUpdate { get; set; } = 1;
+        [JsonPropertyName("CommandPermission")]
+        public string CommandPermission { get; set; } = "@css/root";
 
         [JsonPropertyName("ReloadConfigCommand")]
         public string ReloadConfigCommand { get; set; } = "reloadtrailscfg";
@@ -52,9 +52,9 @@ namespace SharpTimerTrails
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public Dictionary<string, Trail> Trails { get; set; } = new()
         {
-            { "0", new Trail { Name = "Fire Trail", File = "particles/explosions_fx/molotov_child_flame02a.vpcf", Lifetime = 5.0f } },
-            { "1", new Trail { Name = "Glowing Sparks Trail", File = "particles/ambient_fx/ambient_sparks_glow.vpcf", Lifetime = 5.0f } },
-            { "2", new Trail { Name = "Rainbow Trail", Color = "rainbow", Width = 1.0f, Lifetime = 3.0f } },
+            { "0", new Trail { Name = "Aqua Trail", Color = "0 255 255", Width = 1.0f, Lifetime = 3.0f } },
+            { "1", new Trail { Name = "Rainbow Trail", Color = "rainbow", Width = 1.0f, Lifetime = 3.0f } },
+            { "2", new Trail { Name = "Pink Trail", Color = "255 192 203", Width = 1.0f, Lifetime = 3.0f } },
             { "3", new Trail { Name = "Red Trail", Color = "255 0 0", Width = 1.0f, Lifetime = 3.0f } },
             { "4", new Trail { Name = "Green Trail", Color = "0 255 0", Width = 1.0f, Lifetime = 3.0f } },
             { "5", new Trail { Name = "Blue Trail", Color = "0 0 255", Width = 1.0f, Lifetime = 3.0f } }
