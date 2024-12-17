@@ -20,11 +20,10 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
     public void OnTick()
     {
+
         Tick++;
 
-        if (Tick < Config.BeamTicksForUpdate)
-            return;
-        if (Tick < Config.ParticleTicksForUpdate)
+        if (Tick < Config.TicksForUpdate)
             return;
 
         Tick = 0;
@@ -49,7 +48,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                 }
             });
         }
-        
+
         try
         {
             var allPlayers = Utilities.GetPlayers().Where(p => !p.IsBot).ToList();
@@ -74,16 +73,15 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                     VecCopy(absOrigin, TrailLastOrigin[player.Slot]);
                     CreateTrail(player, absOrigin, i + 1);
                 }
-                
             }
 
             foreach (var player in allPlayers.Where(p => !localCachedPlayers.Contains(p.SteamID.ToString())))
             {
-                if (!player.PawnIsAlive || !HasPermission(player))
+                if (!player.PawnIsAlive || !HasTrailPermission(player))
                     continue;
 
-                    var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
-                    if (absOrigin == null) continue;
+                var absOrigin = player.PlayerPawn?.Value?.AbsOrigin;
+                if (absOrigin == null) continue;
 
                 if (VecCalculateDistance(TrailLastOrigin[player.Slot], absOrigin) > 5.0f)
                 {
@@ -141,7 +139,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         try
         {
-            float teleportThreshold = Config.TeleportThreshold * Config.BeamTicksForUpdate;
+            float teleportThreshold = Config.TeleportThreshold * Config.TicksForUpdate;
             string colorValue = !string.IsNullOrEmpty(trailData.Color) ? trailData.Color : "255 255 255";
             float widthValue = trailData.Width > 0 ? trailData.Width : 1.0f;
             float lifetimeValue = trailData.Lifetime > 0 ? trailData.Lifetime : 1.0f;
@@ -181,7 +179,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             {
                 if (Config.EnableDebug)
                 {
-                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}, Threshold: {teleportThreshold} (BeamTicksForUpdate * TeleportThreshold)");
+                    Logger.LogInformation($"Skipping beam creation for player {player.SteamID} due to teleport detected. Distance: {distance}, Threshold: {teleportThreshold} (TeleportThreshold * BeamTicksForUpdate)");
                 }
                 VecCopy(absOrigin, TrailEndOrigin[player.Slot]);
                 return;
@@ -189,10 +187,17 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
             var beam = Utilities.CreateEntityByName<CEnvBeam>("env_beam")!;
 
+            if (beam == null)
+            {
+                if (Config.EnableDebug)
+                    Logger.LogWarning($"Failed to create beam entity for player {player.SteamID}. Trail data: {trailData.Name}");
+                return;
+            }
+
             beam.Width = widthValue;
             beam.Render = color;
-            beam.SpriteName = trailData.File; // WIP
-            beam.SetModel(trailData.File);    // WIP
+            beam.SpriteName = trailData.File;
+            beam.SetModel(trailData.File);
 
             beam.Teleport(absOrigin, new QAngle(), new Vector());
 
@@ -209,7 +214,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Error occurred while creating a beam for SteamID: {player.SteamID}, trail data: {trailData.Name}");
+            Logger.LogError(ex, $"Error occurred while creating a beam for player {player.SteamID}, trail data: {trailData.Name}");
         }
     }
 }
