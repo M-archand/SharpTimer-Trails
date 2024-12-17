@@ -1,13 +1,14 @@
 <a name="readme-top"></a>
+[![UpdateManager Compatible](https://img.shields.io/badge/CS2-UpdateManager-darkgreen)](https://github.com/Kandru/cs2-update-manager/)
 
 <div align="center">
 <h1 align="center">SharpTimer-Trails</h1>
-A plugin that allows the top players (by points) to have a custom trail.
+A plugin that allows the top players (by points) to have a custom trail. Supports <a href="https://github.com/Kandru/cs2-update-manager">automatic updates</a> (optional).
 </div>
 <br>
 
 > [!IMPORTANT]
-> Credits for the base plugin go to [exkludera](https://github.com/exkludera)! All I did was integrate it with SharpTimer & fix the teleport issue.
+> Credits for the base plugin go to [exkludera](https://github.com/exkludera)! All I did was integrate it with SharpTimer, fixed the teleport issue, and added some new config options.
 > 
 <br>
 
@@ -32,7 +33,8 @@ A plugin that allows the top players (by points) to have a custom trail.
 
 ### Particle Trail Usage
 If you want to know which particles you can use for trails, download [Source 2 Viewer](https://github.com/ValveResourceFormat/ValveResourceFormat).
-This will allow you view the contents of `pak01_dir.vpk` which has all of the particle files. Not all of them will work, and some are extrememly resource heavy.
+This will allow you view the contents of `pak01_dir.vpk` which has all of the particle files. Not all of them will work, and they are extrememly resource heavy, negiatively effecting client fps. Personally I would advise against using particles trails at this time. Hopefully I can improve this funcitonality in the future.
+
 ![image](https://github.com/user-attachments/assets/adaa5452-dab6-4af0-97a6-832453db8e4b)
 
 
@@ -45,9 +47,13 @@ This will allow you view the contents of `pak01_dir.vpk` which has all of the pa
 ```json
 {
   "TopCount": 5,  // The top 5 players with the most points will get a trail.
-  "Permission": "@css/root",	// Any player with this perm will get the trail set in Trail 0.
-				If you don't want this, just leave it blank.
   "TicksForUpdate": 1,	// How often the trail is updated. The higher the number the less smooth the trail will look.
+  "TrailPermission": "@css/vip", // Any player with this perm will get the trail set in Trail 0.
+				If you don't want this, just leave it blank.
+  "ReloadConfigCommand": "reloadtrailscfg", The command in game to reload your config, useful for testing
+  "UpdateConfigCommand": "updatetrailscfg", The command in game to update your config
+
+  "CommandPermission": "@css/root", // Any player with this permission will be able to use the reload/update commands.
   "TeleportThreshold": 100,	// If a user is teleported beyond this many units in a tick the trail won't show.
 				This makes it so that there isn't a long straight line between teleports/respawns.
   "DatabaseRefreshInterval": 300,	// How often the plugin fetches the list of top players from the database.
@@ -101,7 +107,8 @@ This will allow you view the contents of `pak01_dir.vpk` which has all of the pa
   },
   "EnableDebug": false,	// Set this to true if you find you're having issues with the trail being created when teleporting.
 			It will give you insight into how you might want to adjust your TeleportThreshold value, as it shows teleport distances.
-  "ConfigVersion": 1
+  "AutoUpdateConfig": false, // If True, this will automatically update your config when you have installed a version of the plugin (if config values have changed)
+  "ConfigVersion": 2
 }
 ```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
