@@ -1,8 +1,5 @@
 using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Modules.Extensions;
-using CounterStrikeSharp.API.Modules.Admin;
-using CounterStrikeSharp.API.Modules.Commands;
 using static CounterStrikeSharp.API.Core.Listeners;
 using Microsoft.Extensions.Logging;
 
@@ -68,44 +65,6 @@ namespace SharpTimerTrails
         {
             RemoveListener<OnTick>(OnTick);
             RemoveListener<OnServerPrecacheResources>(OnServerPrecacheResources);
-        }
-
-        public void ReloadConfigCommand(CCSPlayerController? player, CommandInfo? command)
-        {
-            if (player != null && !AdminManager.PlayerHasPermissions(player, Config.Permission))
-            {
-                command?.ReplyToCommand($" {ChatColors.Red}You do not have the correct permission to execute this command.");
-                return;
-            }
-            
-            try
-            {
-                Config.Reload();
-                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Lime}Configuration reloaded successfully!");
-            }
-            catch (Exception)
-            {
-                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Red}Failed to reload configuration.");
-            }
-        }
-
-        public void UpdateConfigCommand(CCSPlayerController? player, CommandInfo? command)
-        {
-            if (player != null && !AdminManager.PlayerHasPermissions(player, Config.Permission))
-            {
-                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Red}You do not have the correct permission to execute this command.");
-                return;
-            }
-
-            try
-            {
-                Config.Update();
-                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Lime}Configuration updated successfully!");
-            }
-            catch (Exception)
-            {
-                command?.ReplyToCommand($" {ChatColors.White}[Trails] {ChatColors.Red}Failed to update configuration.");
-            }
         }
     }
 }
